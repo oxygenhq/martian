@@ -331,7 +331,7 @@ func SkipBodyLoggingForContentTypes(cts ...string) Option {
 
 // NewLogger returns a HAR logger. The returned
 // logger logs all request post data and response bodies by default.
-func NewLogger() *Logger {
+func NewLogger(logBody *bool) *Logger {
 	l := &Logger{
 		creator: &Creator{
 			Name:    "martian proxy",
@@ -339,7 +339,7 @@ func NewLogger() *Logger {
 		},
 		entries: make(map[string]*Entry),
 	}
-	l.SetOption(BodyLogging(true))
+	l.SetOption(BodyLogging(*logBody))
 	l.SetOption(PostDataLogging(true))
 	return l
 }

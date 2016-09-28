@@ -237,6 +237,7 @@ var (
 	validity       = flag.Duration("validity", time.Hour, "window of time that MITM certificates are valid")
 	allowCORS      = flag.Bool("cors", false, "allow CORS requests to configure the proxy")
 	harLogging     = flag.Bool("har", false, "enable HAR logging API")
+	harLogBody     = flag.Bool("har-log-body", true, "har: log response content")
 	trafficShaping = flag.Bool("traffic-shaping", false, "enable traffic shaping API")
 	skipTLSVerify  = flag.Bool("skip-tls-verify", false, "skip TLS server verification; insecure")
 )
@@ -319,7 +320,7 @@ func main() {
 	fg.AddResponseModifier(m)
 
 	if *harLogging {
-		hl := har.NewLogger()
+		hl := har.NewLogger(harLogBody)
 		stack.AddRequestModifier(hl)
 		stack.AddResponseModifier(hl)
 
