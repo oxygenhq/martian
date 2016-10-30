@@ -203,6 +203,7 @@ import (
 	"github.com/google/martian"
 	mapi "github.com/google/martian/api"
 	"github.com/google/martian/cors"
+	"github.com/google/martian/fifo"
 	"github.com/google/martian/har"
 	"github.com/google/martian/httpspec"
 	"github.com/google/martian/marbl"
@@ -297,8 +298,11 @@ func main() {
 	}
 
 	stack, fg := httpspec.NewStack("martian")
-	p.SetRequestModifier(stack)
-	p.SetResponseModifier(stack)
+
+	// wrap stack in a group so that we can forward API requests to the API port
+	// before the httpspec modifiers which include the via modifier which will
+	// trip loop detection
+	topg := fifo.NewGroup()
 
 	// Redirect API traffic to API server.
 	if *apiAddr != "" {
@@ -311,9 +315,13 @@ func main() {
 		// Forward traffic that pattern matches in http.DefaultServeMux
 		apif := servemux.NewFilter(nil)
 		apif.SetRequestModifier(mapi.NewForwarder("", port))
-
-		fg.AddRequestModifier(apif)
+		topg.AddRequestModifier(apif)
 	}
+	topg.AddRequestModifier(stack)
+	topg.AddResponseModifier(stack)
+
+	p.SetRequestModifier(topg)
+	p.SetResponseModifier(topg)
 
 	m := martianhttp.NewModifier()
 	fg.AddRequestModifier(m)
